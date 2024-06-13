@@ -1,5 +1,5 @@
 # Data
-/data_producer/data
+/data_producer/data/creditcard.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

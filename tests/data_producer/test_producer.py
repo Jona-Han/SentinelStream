@@ -1,7 +1,8 @@
 import unittest
 
 class TestDataProducer(unittest.TestCase):
-    def test(self):
+    def test_generate_transaction(self):
+        
         return
 
 

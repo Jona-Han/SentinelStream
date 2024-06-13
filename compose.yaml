@@ -4,7 +4,9 @@ name: 'sentinelstream'
 services:
   data_producer:
     build:
-      dockerfile: ./data_producer/Dockerfile
+      context: ./data_producer
+    environment:
+      API_GATEWAY_URL: 'http://fastapi_app:8000/transactions/'
 
   test:
     build:
