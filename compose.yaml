@@ -1,0 +1,15 @@
+version: '3'
+name: 'sentinelstream'
+
+services:
+  data_producer:
+    build:
+      dockerfile: ./data_producer/Dockerfile
+
+  test:
+    build:
+      dockerfile: ./tests/Dockerfile
+    depends_on:
+      - data_producer
+
+
