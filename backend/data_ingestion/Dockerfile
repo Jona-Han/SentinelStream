@@ -1,13 +1,13 @@
 FROM node:22.3-alpine
 
-WORKDIR /app_management
+WORKDIR /data_ingestion
 
 COPY package*.json ./
 RUN npm install
 
 COPY . .
 
-EXPOSE 4000
+EXPOSE 4001
 
 ENV NODE_ENV=development
 

@@ -1,5 +1,5 @@
 const express = require('express')
-const router = express.Router()
+const router = express.Router({ mergeParams: true })
 
 router.get('/:mid', async (req, res) => {
     res.send("Success").status(200)
