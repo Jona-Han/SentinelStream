@@ -1,5 +1,15 @@
+from io import BytesIO
+import joblib
+import psycopg2
+import pandas as pd
+from sklearn.base import accuracy_score
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+
 class ModelTrainer:
-    def __init__(self, input_dataset_path, input_features, target_feature, model_type, hyperparameters, output_model_path, test_size):
+    def __init__(self, input_dataset_path, input_features, target_feature, model_type, 
+                 hyperparameters, output_model_path, test_size, db_params):
         self.input_dataset_path = input_dataset_path
         self.input_features = input_features
         self.target_feature = target_feature
@@ -8,6 +18,7 @@ class ModelTrainer:
         self.output_model_path = output_model_path
         self.model = None
         self.test_size = test_size
+        self.db_params = db_params
 
     def load_data(self):
         """Load the training dataset from a CSV file."""
@@ -38,12 +49,28 @@ class ModelTrainer:
 
         print(f"Model performance: {self.score}")
 
-    def save_model(self):
-        """Save the trained model to a file."""
-        joblib.dump(self.model, self.output_model_path)
+    def export_model(self):
+        """Return the saved model as a binary format."""
+        model_binary = BytesIO()
+        joblib.dump(self.model, model_binary)
+        model_binary.seek(0)
+        return model_binary.read()
+    
+    def store_model_in_db(model_binary, model_name, conn_params):
+        """Store the binary model data in the database."""
+        conn = psycopg2.connect(**conn_params)
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO models (name, model_data) VALUES (%s, %s)",
+            (model_name, psycopg2.Binary(model_binary))
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
 
     def process(self):
         """Full processing pipeline."""
         self.load_data()
         self.train_model()
-        self.save_model()
+        model = self.export_model()
+        self.store_model_in_db(model, 'TEMPORARY_MUST_CHANGE', self.db_params)
