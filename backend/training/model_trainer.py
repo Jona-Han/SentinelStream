@@ -1,17 +1,14 @@
 from io import BytesIO
 import joblib
-import psycopg2
-import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-from database_handler import DatabaseHandler
 
 class ModelTrainer:
-    def __init__(self, input_dataset_uid, training_params_uid, db_handler):
-        self.input_dataset_uid = input_dataset_uid
-        self.training_params_uid = training_params_uid
+    def __init__(self, input_dataset_uuid, training_params_uuid, db_handler):
+        self.input_dataset_uuid = input_dataset_uuid
+        self.training_params_uuid = training_params_uuid
 
         self.input_features = None
         self.target_feature = None
@@ -24,11 +21,11 @@ class ModelTrainer:
 
     def load_data(self):
         """Load the training dataset from a CSV file."""
-        self.data = self.db_handler.get_training_data(self.input_dataset_uid)
+        self.data = self.db_handler.get_training_data(self.input_dataset_uuid)
 
     def load_training_params(self):
         """Load the training params."""
-        results = self.db_handler.get_training_params(self.training_params_uid)
+        results = self.db_handler.get_training_params(self.training_params_uuid)
         self.input_features = results.get("input_features", [])
         self.target_feature = results.get("target_feature", "")
         self.model_type = results.get("model_type", "")

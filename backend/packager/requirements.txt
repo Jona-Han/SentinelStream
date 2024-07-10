@@ -4,3 +4,4 @@ joblib
 kafka-python
 os
 psycopg2
+python-dotenv

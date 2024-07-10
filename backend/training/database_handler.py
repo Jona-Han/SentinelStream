@@ -13,14 +13,17 @@ class DatabaseHandler:
                 conn.commit()
                 return cur.fetchall()
             
-    def get_training_data(self, data_uid):
-        query = sql.SQL("SELECT * FROM training_data WHERE uid = %s;")
-        return self.execute_query(query, (data_uid,))
+    def get_training_data(self, data_uuid):
+        """Returns training data from db."""
+        query = sql.SQL("SELECT * FROM training_data WHERE uuid = %s;")
+        return self.execute_query(query, (data_uuid,))
 
-    def get_training_params(self, params_uid):
-        query = sql.SQL("SELECT * FROM training_params WHERE uid = %s;")
-        return self.execute_query(query, (params_uid,))
+    def get_training_params(self, params_uuid):
+        """Returns training params from db."""
+        query = sql.SQL("SELECT * FROM training_params WHERE uuid = %s;")
+        return self.execute_query(query, (params_uuid,))
 
     def store_model(self, model_binary, model_name):
+        """Binarizes and stores model in db."""
         query = sql.SQL("INSERT INTO models (name, model_data) VALUES (%s, %s);")
         self.execute_query(query, (model_name, psycopg2.Binary(model_binary)))

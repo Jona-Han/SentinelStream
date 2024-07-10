@@ -1,14 +1,14 @@
-FROM python:3.8
+FROM python:3.12-alpine
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-WORKDIR /spark
+WORKDIR /packager/
 
-COPY ./requirements.txt ./
+COPY requirements.txt ./
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 COPY . ./
 
-CMD ["python", "spark.py"]
+RUN ["python", "main.py"]

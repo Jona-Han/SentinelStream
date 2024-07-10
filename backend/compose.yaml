@@ -13,7 +13,7 @@ services:
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-      - KAFKA_CREATE_TOPICS='start_training_topic:1:1'
+      - KAFKA_CREATE_TOPICS='start_training_topic:1:1,start_build_topic:1:1'
   training:
     build:
       dockerfile: ./training/Dockerfile
@@ -22,6 +22,24 @@ services:
     environment:
       - KAFKA_SERVERS=kafka
       - KAFKA_TOPIC=start_training_topic
+  packager:
+    build:
+      dockerfile: ./packager/Dockerfile
+    networks:
+      - app-network
+    environment:
+      - KAFKA_SERVERS=kafka
+      - KAFKA_TOPIC=start_build_topic
+  data-ingestion:
+    build:
+      dockerfile: ./data_ingestion/Dockerfile
+    networks:
+      - app-network
+  app-management:
+    build:
+      dockerfile: ./app_management/Dockerfile
+    networks:
+      - app-network
 
 networks:
   app-network:

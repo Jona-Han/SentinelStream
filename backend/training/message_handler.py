@@ -17,6 +17,6 @@ class MessageHandler:
     def start_listening(self):
         for message in self.consumer:
             print(message.value)
-            trainer = ModelTrainer(message.input_dataset_uid, message.training_params_uid, self.db_handler)
+            trainer = ModelTrainer(message.input_dataset_uuid, message.training_params_uuid, self.db_handler)
             trainer.process()
             print("complete")
