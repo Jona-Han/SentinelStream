@@ -1,4 +1,4 @@
-# SentinelStream
+# Velocify AI
 
 Training and deploying machine learning models is often a complex, time-consuming process requiring significant expertise in data handling, model optimization, and infrastructure management. Scaling these models for real-world applications further adds to the complexity, making it challenging for users to deploy efficient, scalable solutions quickly without in depth engineering expertise.
 
