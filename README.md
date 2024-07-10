@@ -1,7 +1,5 @@
 # SentinelStream
 
-In today's digital economy, online transactions are an integral part of daily life, ranging from e-commerce purchases to banking activities.
-With the increase in transaction volume, the risk of fraudulent activities has escalated, and retraining and deployment of ML models continues to grow more complex and time intensive.
-Detecting fraudulent transactions with up to date models, in real-time, is crucial to mitigate financial losses and protect user accounts
+Training and deploying machine learning models is often a complex, time-consuming process requiring significant expertise in data handling, model optimization, and infrastructure management. Scaling these models for real-world applications further adds to the complexity, making it challenging for users to deploy efficient, scalable solutions quickly without in depth engineering expertise.
 
-SentinelStream will address this critical need by providing a scalable, real-time fraud detection platform. By leveraging distributed machine learning techniques and a robust MLOps pipeline, SentinelStream will ensure timely and accurate detection of fraudulent transactions. The platform's distributed architecture will support fast training pipelines, fast predictions, high availability and fault tolerance.
+Velocify AI simplifies this process by offering an automated platform where users can upload their datasets and training parameters. Our service handles the training of machine learning models and packages them into deployable units that are fully scalable and managed by Kubernetes. Velocify AI streamlines the entire lifecycle of model deployment, ensuring users can achieve efficient, scalable AI solutions with ease.
