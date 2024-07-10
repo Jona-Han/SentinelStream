@@ -1,38 +1,13 @@
 const express = require('express')
-const redis = require('redis')
-const multer = require('multer')
 const { v4: uuidv4 } = require('uuid')
 const startUploadValidator = require('../validators/start_upload')
 const chunkValidator = require('../validators/chunk_upload')
-
-const fileFilter = (_, file, cb) => {
-    // Reject files with a mimetype other than csv
-    if (file.mimetype === 'text/csv') {
-        cb(null, true)
-    } else {
-        cb(new Error('Only csv files are allowed'), false)
-    }
-}
-
-const storage = multer.memoryStorage()
-const upload = multer({
-    storage,
-    fileFilter,
-    limits: {
-        files: 1, // Maximum of 1 files per request
-    },
-})
+const pg_pool = require('../utils/rdb')
+const redisClient = require('../utils/redis')
+const upload = require('../utils/multer')
+const storeChunkWithRetry = require('../services/store_chunk')
 
 const router = express.Router()
-const redisClient = redis.createClient()
-
-redisClient.on('error', (err) => {
-    console.error('Redis error:', err)
-})
-
-redisClient.connect().then(() => {
-    console.log('Connected to Redis')
-})
 
 router.post('/start-upload', startUploadValidator, async (req, res) => {
     const { fileName, fileSize, totalChunks } = req.body
@@ -46,99 +21,78 @@ router.post('/start-upload', startUploadValidator, async (req, res) => {
     }
 
     try {
+        await redisClient.expire(uploadId, 3600)
         await redisClient.set(uploadId, JSON.stringify(metadata))
-        res.json({ uploadId })
+        res.status(201).json({ data: uploadId })
     } catch (err) {
         console.error('Error initiating upload session:', err)
         res.status(500).json({ error: 'Could not initiate upload session' })
     }
 })
 
-router.post('/upload-all/:uploadid', async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' })
-    }
-    const { uploadId } = req.params
-    const { originalname, mimetype, size, filename } = req.file
-    console.log(`File uploaded: ${originalname}, ${filename}, ${mimetype}, ${size} bytes`)
-})
+router.post(
+    '/upload-whole/:uploadid',
+    upload.single('file'),
+    async (req, res) => {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' })
+        }
+        const { uploadId } = req.params
+        const { originalname, mimetype, size, filename } = req.file
+        console.log(
+            `File uploading: ${originalname}, ${filename}, ${mimetype}, ${size} bytes`
+        )
 
-router.post('/upload-chunk/:uploadid', chunkValidator, async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' })
-    }
-
-    const { uploadId } = req.params
-    const { chunkNumber } = req.body
-    const chunk = req.file.buffer
-
-    try {
-        const chunkKey = `${uploadId}-${chunkNumber}.chunk`
-        await storeChunkWithRetry(uploadId, chunkKey, chunk, chunkNumber, res)
-    } catch (err) {
-        console.error('Error:', err)
-        res.status(500).json({ error: 'Internal server error' })
-    }
-})
-
-async function storeChunkWithRetry(
-    uploadId,
-    chunkKey,
-    chunk,
-    chunkNumber,
-    res,
-    retries = 5
-) {
-    let attempt = 0
-    let success = false
-
-    while (attempt < retries && !success) {
         try {
-            attempt++
-            await redisClient.watch(uploadId)
-
             const metadata = await redisClient.get(uploadId)
             if (!metadata) {
                 return res
                     .status(404)
-                    .json({ error: 'Upload session not found' })
+                    .json({ error: 'Upload session expired or not found' })
             }
 
-            const parsedMetadata = JSON.parse(metadata)
-            if (parsedMetadata.chunks[chunkNumber - 1] === false) {
-                const transaction = redisClient.multi()
-                transaction.set(chunkKey, chunk)
-                parsedMetadata.chunks[chunkNumber - 1] = true
-                parsedMetadata.receivedChunks++
-                transaction.set(uploadId, JSON.stringify(parsedMetadata))
+            const query =
+                'INSERT INTO models (uuid, model_data, name, size) VALUES ($1, $2, $3, $4)'
+            const values = [uploadId, req.file.buffer, filename, size]
 
-                const results = await transaction.exec()
+            const res = await pg_pool.query(query, values)
 
-                if (results === null) {
-                    console.log(
-                        `Transaction failed due to a change in the watched keys. Retry attempt ${attempt}/${retries}.`
-                    )
-                } else {
-                    console.log('Transaction succeeded:', results)
-                    success = true
-                }
-            } else {
-                return res.status(400).json({ error: 'Chunk already uploaded' })
-            }
+            // Todo: Delete upload data in redis
+
+            res.status(201).json({ data: res })
         } catch (err) {
-            console.error('Error performing transaction:', err)
-        } finally {
-            await redisClient.unwatch()
+            res.status(500).json({ error: err.message })
         }
     }
+)
 
-    if (!success) {
-        return res
-            .status(500)
-            .json({ error: 'Transaction failed after maximum retry attempts' })
-    } else {
-        return res.status(200).json({ message: 'Chunk uploaded successfully' })
+router.post(
+    '/upload-chunk/:uploadid',
+    chunkValidator,
+    upload.single('file'),
+    async (req, res) => {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' })
+        }
+
+        const { uploadId } = req.params
+        const { chunkNumber } = req.body
+        const chunk = req.file.buffer
+
+        try {
+            const chunkKey = `${uploadId}-${chunkNumber}.chunk`
+            await storeChunkWithRetry(
+                uploadId,
+                chunkKey,
+                chunk,
+                chunkNumber,
+                res
+            )
+        } catch (err) {
+            console.error('Error:', err)
+            res.status(500).json({ error: err })
+        }
     }
-}
+)
 
 module.exports = router

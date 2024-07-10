@@ -1,6 +1,7 @@
 pandas
 scikit-learn
 joblib
-kafka-python
+kafka-python-ng
 os
 psycopg2
+python-dotenv

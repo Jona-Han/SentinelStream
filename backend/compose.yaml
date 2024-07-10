@@ -1,17 +1,28 @@
 version: '3'
-name: 'sentinelstream'
-
 services:
-  ingestion: 
-    build:
-      context: data_ingestion
-      target: builder
-    # flask requires SIGINT to stop gracefully
-    # (default stop signal from Compose is SIGTERM)
-    stop_signal: SIGINT
+  kafka:
+    image: 'bitnami/kafka:latest'
     ports:
-      - '4040:4040'
-
-  test:
+      - '9092:9092'
+    networks:
+      - app-network
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CREATE_TOPICS='start_training_topic:1:1'
+  training:
     build:
-      dockerfile: ./tests/Dockerfile
+      dockerfile: ./training/Dockerfile
+    networks:
+      - app-network
+    environment:
+      - KAFKA_SERVERS=kafka
+      - KAFKA_TOPIC=start_training_topic
+
+networks:
+  app-network:
+    driver: bridge
