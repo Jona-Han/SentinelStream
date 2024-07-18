@@ -1,7 +1,5 @@
-pandas
-scikit-learn
+six
 joblib
-kafka-python
-os
-psycopg2
+kafka-python-ng
+psycopg2-binary
 python-dotenv

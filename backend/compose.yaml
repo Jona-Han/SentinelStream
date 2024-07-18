@@ -60,7 +60,7 @@ services:
   data-ingestion:
     build:
       context: ./data_ingestion
-      dockerfile: ingestions.Dockerfile
+      dockerfile: ingestion.Dockerfile
     networks:
       - app-network
       - external
