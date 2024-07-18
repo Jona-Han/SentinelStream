@@ -1,7 +1,27 @@
 version: '3'
 services:
+  db:
+    build:
+      context: ./postgres
+      dockerfile: db.Dockerfile
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    restart: unless-stopped
+    networks:
+      - external
+
+  adminer:
+    image: adminer
+    restart: unless-stopped
+    ports:
+      - '1000:1000'
+    networks:
+      - external
+
   kafka:
-    image: 'bitnami/kafka:latest'
+    image: 'bitnami/kafka:3.7'
     ports:
       - '9092:9092'
     networks:
@@ -14,33 +34,48 @@ services:
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_CREATE_TOPICS='start_training_topic:1:1,start_build_topic:1:1'
+
   training:
     build:
-      dockerfile: ./training/Dockerfile
+      context: ./training
+      dockerfile: training.Dockerfile
     networks:
       - app-network
+      - external
     environment:
       - KAFKA_SERVERS=kafka
       - KAFKA_TOPIC=start_training_topic
+
   packager:
     build:
-      dockerfile: ./packager/Dockerfile
+      context: ./packager
+      dockerfile: packager.Dockerfile
     networks:
       - app-network
+      - external
     environment:
       - KAFKA_SERVERS=kafka
       - KAFKA_TOPIC=start_build_topic
+
   data-ingestion:
     build:
-      dockerfile: ./data_ingestion/Dockerfile
+      context: ./data_ingestion
+      dockerfile: ingestions.Dockerfile
     networks:
       - app-network
+      - external
+
   app-management:
     build:
-      dockerfile: ./app_management/Dockerfile
+      context: ./app_management
+      dockerfile: management.Dockerfile
     networks:
       - app-network
+      - external
 
 networks:
   app-network:
-    driver: bridge
+  external:
+
+volumes:
+  pgdata:
