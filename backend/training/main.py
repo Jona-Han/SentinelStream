@@ -8,7 +8,6 @@ if sys.version_info >= (3, 12, 0):
 
 
 def main():
-    print('Training service starting.')
     KAFKA_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
     KAFKA_TOPIC = os.getenv('KAFKA_TOPIC')
     conn_params = {
@@ -19,14 +18,35 @@ def main():
         'port': os.getenv('DB_PORT')
     }
 
-    if not KAFKA_SERVERS or not KAFKA_TOPIC or not conn_params:
-        print('Environment variables missing.')
+    # Check for missing environment variables
+    if missingEnvVariables(KAFKA_SERVERS, KAFKA_TOPIC, conn_params):
+        print("MISSING VARIABLES")
         return
     
-    messageProxy = MessageHandler(KAFKA_TOPIC, KAFKA_SERVERS, conn_params)
-    messageProxy.start_listening()
+    try:
+        messageProxy = MessageHandler(KAFKA_TOPIC, KAFKA_SERVERS, conn_params)
+        messageProxy.start_listening()
+    except Exception as e:
+        print(f'Error occurred: {e}')
+        return
     print('Training service complete.')
 
+def missingEnvVariables(KAFKA_SERVERS, KAFKA_TOPIC, conn_params):
+    if not KAFKA_SERVERS:
+        print('KAFKA_BOOTSTRAP_SERVERS environment variable is missing.')
+        return True
+    if not KAFKA_TOPIC:
+        print('KAFKA_TOPIC environment variable is missing.')
+        return True
+    for key, value in conn_params.items():
+        if not value:
+            print(f'{key} environment variable is missing.')
+            return True
+    return False
+
 if __name__ == "__main__":
-    load_dotenv()
-    main()
+    try:
+        load_dotenv()
+        main()
+    except:
+        print("ERROR: problem running dot_env or main")

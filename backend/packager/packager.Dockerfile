@@ -11,4 +11,4 @@ RUN pip install -r requirements.txt
 
 COPY . ./
 
-RUN ["python", "main.py"]
+RUN ["python", "-u", "main.py"]

@@ -43,8 +43,11 @@ services:
       - app-network
       - external
     environment:
-      - KAFKA_SERVERS=kafka
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - KAFKA_TOPIC=start_training_topic
+    depends_on:
+      kafka:
+        condition: service_started
 
   packager:
     build:
@@ -54,8 +57,11 @@ services:
       - app-network
       - external
     environment:
-      - KAFKA_SERVERS=kafka
+      - KAFKA_SERVERS=kafka:9092
       - KAFKA_TOPIC=start_build_topic
+    depends_on:
+      kafka:
+        condition: service_started
 
   data-ingestion:
     build:

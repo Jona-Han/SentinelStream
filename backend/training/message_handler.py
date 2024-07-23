@@ -15,8 +15,9 @@ class MessageHandler:
         self.db_handler = DatabaseHandler(db_params)
 
     def start_listening(self):
-        for message in self.consumer:
-            print(message.value)
-            trainer = ModelTrainer(message.input_dataset_uuid, message.training_params_uuid, self.db_handler)
-            trainer.process()
-            print("complete")
+        while True:
+            for message in self.consumer:
+                print(message.value)
+                trainer = ModelTrainer(message.input_dataset_uuid, message.training_params_uuid, self.db_handler)
+                trainer.process()
+                print("complete")
